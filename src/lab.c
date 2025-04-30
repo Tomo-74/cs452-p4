@@ -1,11 +1,14 @@
 #include "lab.h"
+
 #include <pthread.h>
+#include <stdbool.h>
 
 // Written by AI
 struct queue {
     int* data;
     int capacity;
     int size;
+    int shutdown;
 };
 
 // Written by AI
@@ -31,7 +34,7 @@ queue_t queue_init(int capacity)
 }
 
 // Written by me
-void enqueue(queue_t q, int data)
+void enqueue(queue_t q, void *data)
 {
     static pthread_mutex_t enq_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -74,4 +77,22 @@ void *dequeue(queue_t q)
 
     // Release lock
     pthread_mutex_unlock(&deq_mutex);
+}
+
+// Written by me
+void queue_shutdown(queue_t q)
+{
+    q->shutdown = 1;
+}
+
+// Written by me
+bool is_empty(queue_t q)
+{
+    return q->size == 0;
+}
+
+// Written by me
+bool is_shutdown(queue_t q)
+{
+    return q->shutdown;
 }
