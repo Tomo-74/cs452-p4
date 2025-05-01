@@ -5,6 +5,7 @@
 
 // Written by AI
 struct queue {
+    pthread_mutex_t mutex;
     int* data;
     int capacity;
     int size;
@@ -36,36 +37,32 @@ queue_t queue_init(int capacity)
 // Written by me
 void enqueue(queue_t q, void *data)
 {
-    static pthread_mutex_t enq_mutex = PTHREAD_MUTEX_INITIALIZER;
-
     while(q->size == q->capacity)
     {
         // Wait until there is room in the queue
     }
 
     // Acquire lock
-    pthread_mutex_lock(&enq_mutex);
+    pthread_mutex_lock(&q->mutex);
 
     // Add to back of queue
     q->data[q->size] = data;
     q->size++;
 
     // Release lock
-    pthread_mutex_unlock(&enq_mutex);
+    pthread_mutex_unlock(&q->mutex);
 }
 
 // Written by me
 void *dequeue(queue_t q)
 {
-    static pthread_mutex_t deq_mutex = PTHREAD_MUTEX_INITIALIZER;
-
     while(q->size == 0)
     {
         // Wait until there is an element to remove
     }
 
     // Acquire lock
-    pthread_mutex_lock(&deq_mutex);
+    pthread_mutex_lock(&q->mutex);
 
     // Remove front element, shift remaining elements left
     for(size_t i = 0; i < q->size - 1; i++)
@@ -76,13 +73,16 @@ void *dequeue(queue_t q)
     q->size--;
 
     // Release lock
-    pthread_mutex_unlock(&deq_mutex);
+    pthread_mutex_unlock(&q->mutex);
 }
 
 // Written by me
 void queue_shutdown(queue_t q)
 {
+    if(!q) return;
+    pthread_mutex_lock(&q->mutex);
     q->shutdown = 1;
+    pthread_mutex_unlock(&q->mutex);
 }
 
 // Written by me
