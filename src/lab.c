@@ -65,8 +65,13 @@ void queue_destroy(queue_t q)
 // Written by me
 void enqueue(queue_t q, void *data)
 {
+    if(!q || !data) return;
+    
     // Do nothing if shut down
     if(q->shutdown) return;
+
+    // Acquire lock
+    pthread_mutex_lock(&q->mutex);
 
     // Wait until there is room in the queue
     while(q->size == q->capacity)
@@ -74,9 +79,6 @@ void enqueue(queue_t q, void *data)
         if (q->shutdown) return; // If a shutdown occurs while waiting
         pthread_cond_wait(&q->notFull, &q->mutex); // Wait on the condition that queue is not full
     }
-
-    // Acquire lock
-    pthread_mutex_lock(&q->mutex);
 
     // Add to back of queue
     q->data[q->size] = data;
@@ -92,9 +94,14 @@ void enqueue(queue_t q, void *data)
 // Written by me
 void *dequeue(queue_t q)
 {
+    if(!q) return;
+
     // Do nothing if shut down
     if(q->shutdown) return;
 
+    // Acquire lock
+    pthread_mutex_lock(&q->mutex);
+    
     // Wait until there is an element to remove
     while(q->size == 0)
     {
@@ -102,8 +109,6 @@ void *dequeue(queue_t q)
         pthread_cond_wait(&q->notEmpty, &q->mutex); // Wait on the condition that queue is not empty
     }
 
-    // Acquire lock
-    pthread_mutex_lock(&q->mutex);
 
     // Remove front element, shift remaining elements left
     for(size_t i = 0; i < q->size - 1; i++)
